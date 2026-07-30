@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import dotenv from "dotenv";
 import paystack from "../utils/paystackService";
 import RegistrationPayments from "../model/registrationTransactions";
+import Admission from "../model/admissionRecords";
 
 
 dotenv.config();
@@ -49,6 +50,37 @@ export const verifyPayment = async (req: Request, res: Response) => {
   } catch (error: any) {
     return res.status(500).json({
       message: error.response?.data || error.message,
+    });
+  }
+};
+
+
+export const getAdmissionRecord = async (req: Request, res: Response) => {
+  const id = req.params.admissionNo;
+
+  try {
+    const admissionData = await Admission.findOne({
+      where: {
+        id,
+      }
+    });
+
+    if (admissionData) {
+      return res.status(200).json({
+        success: true,
+        data: admissionData,
+      });
+    } else {
+      return res.status(404).json({
+        success: false,
+        message: "Data not found",
+      });
+    }
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to get data",
+      errorMessage: error,
     });
   }
 };
