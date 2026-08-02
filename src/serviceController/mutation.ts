@@ -7,6 +7,7 @@ import Admission, { Uploads, UploadedFile } from "../model/admissionRecords";
 
 import { UniqueConstraintError } from "sequelize";
 import RegistrationPayments from "../model/registrationTransactions";
+import { sendAdmissionNotification } from "../utils/notification";
 
 dotenv.config();
 const { REGISTRAION_FEE, PAYSTACK_CALLBACK_URL }: any = process.env;
@@ -119,8 +120,10 @@ export async function createAdmissionRecord(req: Request, res: Response) {
     const g2 = payload.guardian2;
     const g2IsNone = !g2?.relation || g2.relation === "None";
 
+    const applicationId = randomUUID();
+
     const admission = await Admission.create({
-      id: randomUUID(),
+      id: applicationId,
 
       academicYear: payload.program.academicYear,
       admissionType: payload.program.admissionType,
@@ -168,6 +171,7 @@ export async function createAdmissionRecord(req: Request, res: Response) {
       status: "submitted",
     });
 
+    await sendAdmissionNotification({data:payload, applicationId, submittedAt: new Date() })
     return res.status(201).json({ id: admission.get("id") });
   } catch (err) {
     console.error("createAdmissionRecord failed:", err);
