@@ -1,22 +1,34 @@
-import nodemailer from 'nodemailer'
+import { Resend } from "resend";
 import dotenv from 'dotenv'
 import { buildAdmissionNotificationEmail } from "./mailMessage";
 
 dotenv.config()
 
-const { SMTP_HOST, SMTP_PORT, SMTP_SECURE, DEV_GMAIL_USER, DEV_GMAIL_PASSWORD, ADMISSIONS_INBOX, PORTAL_WEB_URL } = process.env
+// const { SMTP_HOST, SMTP_PORT, SMTP_SECURE, DEV_GMAIL_USER, DEV_GMAIL_PASSWORD, ADMISSIONS_INBOX, PORTAL_WEB_URL } = process.env
 
-const transporter = nodemailer.createTransport({
- host: SMTP_HOST!,
-  port: Number(SMTP_PORT ?? 587),
-  secure: SMTP_SECURE! === "true",
-    auth: {
-    user: DEV_GMAIL_USER!,
-    pass: DEV_GMAIL_PASSWORD!,
-  },
-});
 
-console.log(transporter)
+/* =============================================================================
+   Sends the "new application" notification to the Tower Admissions inbox via
+   Resend's HTTP API.
+
+   IMPORTANT: this deliberately does NOT use raw SMTP (nodemailer + smtp.gmail.com).
+   Render blocks outbound SMTP connections (ports 25/465/587) at the network
+   level on their infrastructure, so any SMTP transport hangs until it hits
+   nodemailer's connection timeout (ETIMEDOUT on CONN) — no combination of
+   credentials, ports, or App Passwords fixes that, because the TCP connection
+   never leaves Render's network in the first place. Resend sends over normal
+   HTTPS (443), which isn't blocked.
+   ============================================================================= */
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+const ADMISSIONS_INBOX = process.env.TOWER_ADMISSIONS_EMAIL as string; // e.g. toweradmissionscentre@gmail.com
+const ADMIN_BASE_URL = process.env.TOWER_ADMIN_BASE_URL as string; // e.g. https://admin.towerprep.edu
+// Must be an address on a domain you've verified in the Resend dashboard
+// (Domains -> Add Domain -> add the SPF/DKIM DNS records they give you).
+// Until a domain is verified, Resend only lets you send to the email address
+// you signed up with — fine for testing, not for real applicant traffic.
+const FROM_ADDRESS = process.env.RESEND_FROM_ADDRESS as string; // e.g. "Tower Preparatory Academy <admissions@towerprep.edu>"
 
 export async function sendAdmissionNotification(params: {
   data: any;
@@ -25,10 +37,7 @@ export async function sendAdmissionNotification(params: {
 }) {
   const { data, applicationId, submittedAt } = params;
 
-  console.log("params", params)
-
-
-  const reviewUrl = `${PORTAL_WEB_URL}/${applicationId}` || "https://www.towerpreparatoryacademy.com";
+  const reviewUrl = `${ADMIN_BASE_URL}/${applicationId}`;
 
   const { subject, html, text } = buildAdmissionNotificationEmail({
     data,
@@ -37,14 +46,68 @@ export async function sendAdmissionNotification(params: {
     submittedAt,
   });
 
-  await transporter.sendMail({
-    from: `"Tower Preparatory Academy" <${process.env.DEV_GMAIL_USER}>`,
-    to: ADMISSIONS_INBOX!,
+  const { data: sendResult, error } = await resend.emails.send({
+    from: FROM_ADDRESS,
+    to: ADMISSIONS_INBOX,
     subject,
     html,
     text,
   });
-};
+
+  if (error) {
+    // Resend returns a structured error rather than throwing — surface it
+    // the same way a thrown error would behave for callers/try-catch upstream.
+    console.error("sendAdmissionNotification failed:", error);
+    throw new Error(`Failed to send admission notification: ${error.message}`);
+  }
+
+  return sendResult;
+}
+
+
+
+
+
+
+// const transporter = nodemailer.createTransport({
+//  host: SMTP_HOST!,
+//   port: Number(SMTP_PORT ?? 587),
+//   secure: SMTP_SECURE! === "true",
+//     auth: {
+//     user: DEV_GMAIL_USER!,
+//     pass: DEV_GMAIL_PASSWORD!,
+//   },
+// });
+
+// console.log(transporter)
+
+// export async function sendAdmissionNotification(params: {
+//   data: any;
+//   applicationId: string;
+//   submittedAt?: Date;
+// }) {
+//   const { data, applicationId, submittedAt } = params;
+
+//   console.log("params", params)
+
+
+//   const reviewUrl = `${PORTAL_WEB_URL}/${applicationId}` || "https://www.towerpreparatoryacademy.com";
+
+//   const { subject, html, text } = buildAdmissionNotificationEmail({
+//     data,
+//     applicationId,
+//     reviewUrl,
+//     submittedAt,
+//   });
+
+//   await transporter.sendMail({
+//     from: `"Tower Preparatory Academy" <${process.env.DEV_GMAIL_USER}>`,
+//     to: ADMISSIONS_INBOX!,
+//     subject,
+//     html,
+//     text,
+//   });
+// };
 
 
 // const { DEV_GMAIL_USER, DEV_GMAIL_PASSWORD } = process.env
