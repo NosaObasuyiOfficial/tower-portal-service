@@ -4,18 +4,19 @@ import { buildAdmissionNotificationEmail } from "./mailMessage";
 
 dotenv.config()
 
-const { DEV_GMAIL_USER, DEV_GMAIL_PASSWORD, ADMISSIONS_INBOX, PORTAL_WEB_URL } = process.env
+const { SMTP_HOST, SMTP_PORT, SMTP_SECURE, DEV_GMAIL_USER, DEV_GMAIL_PASSWORD, ADMISSIONS_INBOX, PORTAL_WEB_URL } = process.env
 
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
-  auth: {
+ host: SMTP_HOST!,
+  port: Number(SMTP_PORT ?? 587),
+  secure: SMTP_SECURE! === "true",
+    auth: {
     user: DEV_GMAIL_USER!,
     pass: DEV_GMAIL_PASSWORD!,
   },
-    tls:{
-        rejectUnauthorized: false
-    }
 });
+
+console.log(transporter)
 
 export async function sendAdmissionNotification(params: {
   data: any;
@@ -23,6 +24,9 @@ export async function sendAdmissionNotification(params: {
   submittedAt?: Date;
 }) {
   const { data, applicationId, submittedAt } = params;
+
+  console.log("params", params)
+
 
   const reviewUrl = `${PORTAL_WEB_URL}/${applicationId}` || "https://www.towerpreparatoryacademy.com";
 
