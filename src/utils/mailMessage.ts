@@ -254,7 +254,12 @@ export function buildAdmissionNotificationEmail(params: {
             <td class="tpa-mail-pad" style="padding: 32px 40px 28px 40px;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #EDEDF0;">
                 <tr>
-                  <td style="padding-top:20px; font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:#B3B4BB; font-size:12px; line-height:1.6; text-align:center;">
+                  <td align="center" style="padding-top:24px;">
+                    <img src="https://i.imgur.com/nTGCwgK.png" width="48" height="48" alt="Tower Preparatory Academy" style="display:block; width:48px; height:48px; border-radius:10px;" />
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding-top:14px; font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:#B3B4BB; font-size:12px; line-height:1.6; text-align:center;">
                     This is an automated notification from the Tower Preparatory Academy admissions system.<br />
                     Please do not reply directly to this email.
                   </td>
