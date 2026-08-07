@@ -4,13 +4,24 @@ import paystack from "../utils/paystackService";
 import { randomUUID } from "crypto";
 import Admission, { Uploads, UploadedFile } from "../model/admissionRecords";
 // import { uploadFileToStorage } from "../storage/uploadFileToStorage"; // your S3 / disk helper — see note below
+import bcrypt from "bcrypt";
+import {
+  generateTemporaryPassword,
+  ensureUniqueStudentId,
+} from "../utils/studentCredentials";
+import jwt from "jsonwebtoken";
 
 import { UniqueConstraintError } from "sequelize";
 import RegistrationPayments from "../model/registrationTransactions";
 import { sendAdmissionNotification } from "../utils/notification";
 
 dotenv.config();
-const { REGISTRAION_FEE, PAYSTACK_CALLBACK_URL }: any = process.env;
+const {
+  REGISTRAION_FEE,
+  PAYSTACK_CALLBACK_URL,
+  // JWT_SECRET,
+  // JWT_EXPIRES_IN,
+}: any = process.env;
 
 export const initializePayment = async (req: Request, res: Response) => {
   try {
@@ -30,7 +41,6 @@ export const initializePayment = async (req: Request, res: Response) => {
     });
 
     if (response.data.status) {
-
       const paymentSuccess = await RegistrationPayments.create({
         id: applicationId,
         title: "REGISTRATION FEE",
@@ -43,7 +53,7 @@ export const initializePayment = async (req: Request, res: Response) => {
       });
 
       if (paymentSuccess) {
-        return res.status(200).json({...response.data.data, amount});
+        return res.status(200).json({ ...response.data.data, amount });
       } else {
         return res.status(400).json({
           success: false,
@@ -63,7 +73,6 @@ export const initializePayment = async (req: Request, res: Response) => {
     });
   }
 };
-
 
 /* =============================================================================
    POST /api/admissions
@@ -109,7 +118,7 @@ export async function createAdmissionRecord(req: Request, res: Response) {
     if (payload.consent.signatureMode === "draw") {
       // const signatureFile = files?.signatureFile?.[0];
       // const persisted = await persistUpload(signatureFile);
-      const persisted:any = null;
+      const persisted: any = null;
       signatureImageUrl = persisted?.url ?? null;
     }
 
@@ -121,6 +130,19 @@ export async function createAdmissionRecord(req: Request, res: Response) {
     const g2IsNone = !g2?.relation || g2.relation === "None";
 
     const applicationId = randomUUID();
+
+    const studentId = await ensureUniqueStudentId(
+      applicationId,
+      async (candidate) => {
+        const existing = await Admission.findOne({
+          where: { studentId: candidate },
+        });
+        return !!existing;
+      },
+    );
+
+    const temporaryPassword = generateTemporaryPassword();
+    const passwordHash = await bcrypt.hash(temporaryPassword, 10);
 
     const admission = await Admission.create({
       id: applicationId,
@@ -155,7 +177,9 @@ export async function createAdmissionRecord(req: Request, res: Response) {
       allergies: payload.medical.allergies || null,
       medicalConditions: payload.medical.conditions || null,
 
-      montessoriAttendedBefore: isMontessori ? payload.montessori.attendedBefore : null,
+      montessoriAttendedBefore: isMontessori
+        ? payload.montessori.attendedBefore
+        : null,
       montessoriInterest: isMontessori ? payload.montessori.interest : null,
       montessoriStrengths: isMontessori ? payload.montessori.strengths : null,
 
@@ -164,18 +188,29 @@ export async function createAdmissionRecord(req: Request, res: Response) {
       tuitionAgreement: payload.consent.tuitionAgreement,
       mediaRelease: payload.consent.mediaRelease,
       signatureMode: payload.consent.signatureMode,
-      signatureTypedName: payload.consent.signatureMode === "type" ? payload.consent.signatureTypedName : null,
+      signatureTypedName:
+        payload.consent.signatureMode === "type"
+          ? payload.consent.signatureTypedName
+          : null,
       signatureImageUrl,
       signatureDate: payload.consent.signatureDate,
 
       status: "submitted",
+      studentId: studentId,
+      password: passwordHash,
     });
 
-    await sendAdmissionNotification({data:payload, applicationId, submittedAt: new Date() })
+    await sendAdmissionNotification({
+      data: payload,
+      applicationId,
+      submittedAt: new Date(),
+    });
     return res.status(201).json({ id: admission.get("id") });
   } catch (err) {
     console.error("createAdmissionRecord failed:", err);
-    return res.status(500).json({ error: "Could not save the application. Please try again." });
+    return res
+      .status(500)
+      .json({ error: "Could not save the application. Please try again." });
   }
 }
 
@@ -187,7 +222,7 @@ export async function createAdmissionRecord(req: Request, res: Response) {
 //     street:"",
 //   city:"",
 //   state:"",
-//   postalCode:"", 
+//   postalCode:"",
 //   }
 //   return { name: file.originalname, url, size: file.size, mimeType: file.mimetype };
 // }
@@ -198,18 +233,82 @@ export async function createAdmissionRecord(req: Request, res: Response) {
 function validateAdmissionPayload(payload: any): Record<string, string> {
   const errors: Record<string, string> = {};
 
-  if (!payload?.program?.academicYear) errors["program.academicYear"] = "Academic year is required.";
-  if (!payload?.program?.track) errors["program.track"] = "Program track is required.";
-  if (!payload?.student?.firstName) errors["student.firstName"] = "First name is required.";
-  if (!payload?.student?.lastName) errors["student.lastName"] = "Last name is required.";
-  if (!payload?.guardian1?.email) errors["guardian1.email"] = "Guardian email is required.";
+  if (!payload?.program?.academicYear)
+    errors["program.academicYear"] = "Academic year is required.";
+  if (!payload?.program?.track)
+    errors["program.track"] = "Program track is required.";
+  if (!payload?.student?.firstName)
+    errors["student.firstName"] = "First name is required.";
+  if (!payload?.student?.lastName)
+    errors["student.lastName"] = "Last name is required.";
+  if (!payload?.guardian1?.email)
+    errors["guardian1.email"] = "Guardian email is required.";
 
   if (payload?.program?.track === "montessori") {
-    if (!payload?.montessori?.attendedBefore) errors["montessori.attendedBefore"] = "Required for Montessori applicants.";
+    if (!payload?.montessori?.attendedBefore)
+      errors["montessori.attendedBefore"] =
+        "Required for Montessori applicants.";
   }
 
-  if (!payload?.consent?.tuitionAgreement) errors["consent.tuitionAgreement"] = "Tuition agreement must be accepted.";
+  if (!payload?.consent?.tuitionAgreement)
+    errors["consent.tuitionAgreement"] = "Tuition agreement must be accepted.";
 
   return errors;
 }
 
+/* =============================================================================
+   POST /api/auth/login
+   Body: { studentId: string, password: string }
+   ============================================================================= */
+export async function loginStudent(req: Request, res: Response) {
+  try {
+    const { studentId, password } = req.body as {
+      studentId?: string;
+      password?: string;
+    };
+
+    if (!studentId?.trim() || !password) {
+      return res
+        .status(400)
+        .json({ error: "Student ID and password are required." });
+    }
+
+    const admission = await Admission.findOne({
+      where: { studentId: studentId.trim() },
+    });
+
+    const passwordHash = admission?.get("password") as string | undefined;
+    const isValid = passwordHash
+      ? await bcrypt.compare(password, passwordHash)
+      : false;
+
+    if (!admission || !isValid) {
+      return res.status(401).json({ error: "Invalid Student ID or password." });
+    }
+
+    return res.status(200).json({
+      id: admission.get("id"),
+    });
+
+    // const token = jwt.sign(
+    //   { sub: admission.get("id"), studentId: admission.get("studentId") },
+    //   JWT_SECRET!,
+    //   { expiresIn: JWT_EXPIRES_IN! }
+    // );
+
+    // return res.status(200).json({
+    //   token,
+    //   student: {
+    //     id: admission.get("id"),
+    //     studentId: admission.get("studentId"),
+    //     firstName: admission.get("studentFirstName"),
+    //     lastName: admission.get("studentLastName"),
+    //   },
+    // });
+  } catch (err) {
+    console.error("loginStudent failed:", err);
+    return res
+      .status(500)
+      .json({ error: "Something went wrong. Please try again." });
+  }
+}

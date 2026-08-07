@@ -31,6 +31,8 @@ export type Uploads = {
 --------------------------------------------------------------------------- */
 export type ADMISSION = {
   id: string;
+  studentId: string;
+  password: string;
 
   // Program
   academicYear: string;
@@ -115,6 +117,9 @@ Admission.init(
       primaryKey: true,
       allowNull: false,
     },
+
+    studentId: { type: DataTypes.STRING, allowNull: false },
+    password: { type: DataTypes.STRING, allowNull: false },
 
     // Program
     academicYear: { type: DataTypes.STRING, allowNull: false },
