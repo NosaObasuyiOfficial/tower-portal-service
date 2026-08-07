@@ -205,7 +205,13 @@ export async function createAdmissionRecord(req: Request, res: Response) {
       applicationId,
       submittedAt: new Date(),
     });
-    return res.status(201).json({ id: admission.get("id") });
+    return res
+      .status(201)
+      .json({
+        id: admission.get("id"),
+        studentId: admission.get("studentId"),
+        password: admission.get("password"),
+      });
   } catch (err) {
     console.error("createAdmissionRecord failed:", err);
     return res
@@ -255,7 +261,6 @@ function validateAdmissionPayload(payload: any): Record<string, string> {
 
   return errors;
 }
-
 
 export async function loginStudent(req: Request, res: Response) {
   try {
