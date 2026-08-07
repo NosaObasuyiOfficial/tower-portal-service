@@ -256,10 +256,7 @@ function validateAdmissionPayload(payload: any): Record<string, string> {
   return errors;
 }
 
-/* =============================================================================
-   POST /api/auth/login
-   Body: { studentId: string, password: string }
-   ============================================================================= */
+
 export async function loginStudent(req: Request, res: Response) {
   try {
     const { studentId, password } = req.body as {
