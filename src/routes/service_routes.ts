@@ -8,6 +8,6 @@ router.post("/auth/login", loginStudent);
 router.post("/payments/initialize", initializePayment);
 router.get("/payments/verify/:reference", verifyPayment);
 router.post("/admission", createAdmissionRecord);
-router.get("/application/:admissionNo", getAdmissionRecord);
+router.get("/student/:admissionNo", getAdmissionRecord);
 
 export default router;

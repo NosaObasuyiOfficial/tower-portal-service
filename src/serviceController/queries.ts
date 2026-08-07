@@ -84,3 +84,4 @@ export const getAdmissionRecord = async (req: Request, res: Response) => {
     });
   }
 };
+
