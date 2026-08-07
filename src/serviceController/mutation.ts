@@ -210,7 +210,7 @@ export async function createAdmissionRecord(req: Request, res: Response) {
       .json({
         id: admission.get("id"),
         studentId: admission.get("studentId"),
-        password: admission.get("password"),
+        password: temporaryPassword,
       });
   } catch (err) {
     console.error("createAdmissionRecord failed:", err);
