@@ -56,7 +56,7 @@ export const verifyPayment = async (req: Request, res: Response) => {
 
 
 export const getAdmissionRecord = async (req: Request, res: Response) => {
-  const id = req.params.admissionNo;
+  const id = req.params.admissionNo || req.params.studentDataId;
 
   try {
     const admissionData = await Admission.findOne({
