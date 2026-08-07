@@ -1,11 +1,11 @@
 import { Resend } from "resend";
-import dotenv from 'dotenv'
+import dotenv from "dotenv";
 import { buildAdmissionNotificationEmail } from "./mailMessage";
+import { buildStudentCredentialsEmail } from "./outgoingNotification";
 
-dotenv.config()
+dotenv.config();
 
 // const { SMTP_HOST, SMTP_PORT, SMTP_SECURE, DEV_GMAIL_USER, DEV_GMAIL_PASSWORD, ADMISSIONS_INBOX, PORTAL_WEB_URL } = process.env
-
 
 /* =============================================================================
    Sends the "new application" notification to the Tower Admissions inbox via
@@ -23,7 +23,7 @@ dotenv.config()
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const ADMISSIONS_INBOX = process.env.TOWER_ADMISSIONS_EMAIL as string; // e.g. toweradmissionscentre@gmail.com
-const ADMIN_BASE_URL = process.env.TOWER_ADMIN_BASE_URL as string; // e.g. https://admin.towerprep.edu
+const ADMIN_BASE_URL = process.env.TOWER_WEB_BASE_URL as string; // e.g. https://admin.towerprep.edu
 // Must be an address on a domain you've verified in the Resend dashboard
 // (Domains -> Add Domain -> add the SPF/DKIM DNS records they give you).
 // Until a domain is verified, Resend only lets you send to the email address
@@ -37,7 +37,7 @@ export async function sendAdmissionNotification(params: {
 }) {
   const { data, applicationId, submittedAt } = params;
 
-  const reviewUrl = `${ADMIN_BASE_URL}/${applicationId}`;
+  const reviewUrl = `${ADMIN_BASE_URL}/admission-acceptance-portal/987623628237/toweradmissionscenter/${applicationId}`;
 
   const { subject, html, text } = buildAdmissionNotificationEmail({
     data,
@@ -64,10 +64,45 @@ export async function sendAdmissionNotification(params: {
   return sendResult;
 }
 
+export async function sendParentNotification(params: {
+  data: any;
+  studentId: string;
+  temporaryPassword: string;
+}) {
+  const { data, studentId, temporaryPassword } = params;
 
+  // const reviewUrl = `${ADMIN_BASE_URL}/${applicationId}`;
 
+  const { subject, html, text } = buildStudentCredentialsEmail({
+    data: {
+      student: data.student,
+      guardian1: data.guardian1,
+      program: data.program,
+    },
+    studentId,
+    temporaryPassword,
+    portalUrl: `${ADMIN_BASE_URL}/student/portal`,
+  });
 
+  const { data: sendResult, error } = await resend.emails.send({
+    from: FROM_ADDRESS,
+    to: data.guardian1.email,
+    subject,
+    html,
+    text,
+  });
 
+  if (error) {
+    // Resend returns a structured error rather than throwing — surface it
+    // the same way a thrown error would behave for callers/try-catch upstream.
+    console.error("sendNotification failed:", error);
+    throw new Error(
+      `Failed to send parent admission notification: ${error.message}`,
+    );
+  }
+
+  return sendResult;
+}
 
 // const transporter = nodemailer.createTransport({
 //  host: SMTP_HOST!,
@@ -90,7 +125,6 @@ export async function sendAdmissionNotification(params: {
 
 //   console.log("params", params)
 
-
 //   const reviewUrl = `${PORTAL_WEB_URL}/${applicationId}` || "https://www.towerpreparatoryacademy.com";
 
 //   const { subject, html, text } = buildAdmissionNotificationEmail({
@@ -108,7 +142,6 @@ export async function sendAdmissionNotification(params: {
 //     text,
 //   });
 // };
-
 
 // const { DEV_GMAIL_USER, DEV_GMAIL_PASSWORD } = process.env
 // export const transporter = nodemailer.createTransport({
