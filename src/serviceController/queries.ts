@@ -4,7 +4,6 @@ import paystack from "../utils/paystackService";
 import RegistrationPayments from "../model/registrationTransactions";
 import Admission from "../model/admissionRecords";
 
-
 dotenv.config();
 const { REGISTRAION_FEE }: any = process.env;
 
@@ -54,21 +53,21 @@ export const verifyPayment = async (req: Request, res: Response) => {
   }
 };
 
-
 export const getAdmissionRecord = async (req: Request, res: Response) => {
   const id = req.params.admissionNo || req.params.studentDataId;
 
   try {
-    const admissionData = await Admission.findOne({
+    const admissionData: any = await Admission.findOne({
       where: {
         id,
-      }
+      },
     });
+    const { studentId, password, ...data } = admissionData;
 
     if (admissionData) {
       return res.status(200).json({
         success: true,
-        data: admissionData,
+        data,
       });
     } else {
       return res.status(404).json({
@@ -84,4 +83,3 @@ export const getAdmissionRecord = async (req: Request, res: Response) => {
     });
   }
 };
-

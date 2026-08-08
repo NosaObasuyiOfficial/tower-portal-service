@@ -116,7 +116,7 @@ export function buildStudentCredentialsEmail(params: {
                 </tr>
                 <tr>
                   <td style="border-top:1px solid #EDEDF0; padding: 20px 24px;">
-                    <div style="font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:#9A9BA3; font-size:11px; letter-spacing:0.04em; text-transform:uppercase; font-weight:600;">Temporary Password</div>
+                    <div style="font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:#9A9BA3; font-size:11px; letter-spacing:0.04em; text-transform:uppercase; font-weight:600;">Password</div>
                     <div style="font-family: 'SFMono-Regular', Consolas, Menlo, monospace; color:#111114; font-size:22px; font-weight:700; letter-spacing:0.03em; padding-top:4px;">${temporaryPassword}</div>
                   </td>
                 </tr>
@@ -130,7 +130,7 @@ export function buildStudentCredentialsEmail(params: {
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#FCE7F1; border-radius:12px;">
                 <tr>
                   <td style="padding: 14px 18px; font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:#9D2159; font-size:13px; line-height:1.6;">
-                    For ${data.student.firstName}'s security, please keep this password confidential and change it after your first login. This email is the only place it will be shown.
+                    For ${data.student.firstName}'s security, please keep this password confidential. This email is the only place it will be shown.
                   </td>
                 </tr>
               </table>
@@ -154,7 +154,7 @@ export function buildStudentCredentialsEmail(params: {
           <tr>
             <td align="center" style="padding: 10px 40px 0 40px;">
               <div style="font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:#B3B4BB; font-size:12px;">
-                Having trouble logging in? Contact the school office for help.
+                Having trouble logging in? Contact toweradmissionscentre@gmail.com for help.
               </div>
             </td>
           </tr>
