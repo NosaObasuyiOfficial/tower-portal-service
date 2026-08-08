@@ -62,7 +62,7 @@ export const getAdmissionRecord = async (req: Request, res: Response) => {
         id,
       },
     });
-    const { studentId, password, ...data } = admissionData;
+    const { studentId, password, ...data } = admissionData.dataValues;
 
     if (admissionData) {
       return res.status(200).json({
