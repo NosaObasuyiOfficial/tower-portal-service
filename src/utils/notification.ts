@@ -1,7 +1,7 @@
 import { Resend } from "resend";
 import dotenv from "dotenv";
 import { buildAdmissionNotificationEmail } from "./mailMessage";
-import { buildStudentCredentialsEmail } from "./outgoingNotification";
+import { buildStudentCredentialsEmail } from "./outgoingMessage";
 
 dotenv.config();
 

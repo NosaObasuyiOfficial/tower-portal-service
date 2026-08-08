@@ -255,7 +255,7 @@ export function buildAdmissionNotificationEmail(params: {
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #EDEDF0;">
                 <tr>
                   <td align="center" style="padding-top:24px;">
-                    <img src="https://i.imgur.com/nTGCwgK.png" width="48" height="48" alt="Tower Preparatory Academy" style="display:block; width:48px; height:48px; border-radius:10px;" />
+                    <img src="https://i.imgur.com/nTGCwgK.png" width="48" height="48" alt="Tower Preparatory Academy" style="display:block; width:48px; height:48px; border-radius:50%;" />
                   </td>
                 </tr>
                 <tr>
