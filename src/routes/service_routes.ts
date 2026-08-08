@@ -1,11 +1,12 @@
 import express from "express";
-import { initializePayment, createAdmissionRecord, loginStudent } from "../serviceController/mutation";
+import { initializePayment, createAdmissionRecord, loginStudent, acceptAdmissionApplication } from "../serviceController/mutation";
 import { getAdmissionRecord, verifyPayment } from "../serviceController/queries";
 
 const router = express.Router();
 
 router.post("/auth/login", loginStudent);
 router.post("/payments/initialize", initializePayment);
+router.post("/admission/accept", acceptAdmissionApplication);
 router.get("/payments/verify/:reference", verifyPayment);
 router.post("/admission", createAdmissionRecord);
 router.get("/student/:admissionNo", getAdmissionRecord);

@@ -9,11 +9,14 @@ import {
   generateTemporaryPassword,
   ensureUniqueStudentId,
 } from "../utils/studentCredentials";
-import jwt from "jsonwebtoken";
+// import jwt from "jsonwebtoken";
 
 import { UniqueConstraintError } from "sequelize";
 import RegistrationPayments from "../model/registrationTransactions";
-import { sendAdmissionNotification, sendParentNotification } from "../utils/notification";
+import {
+  sendAdmissionNotification,
+  sendParentNotification,
+} from "../utils/notification";
 
 dotenv.config();
 const {
@@ -212,13 +215,11 @@ export async function createAdmissionRecord(req: Request, res: Response) {
       temporaryPassword,
     });
 
-    return res
-      .status(201)
-      .json({
-        id: admission.get("id"),
-        studentId: admission.get("studentId"),
-        password: temporaryPassword,
-      });
+    return res.status(201).json({
+      id: admission.get("id"),
+      studentId: admission.get("studentId"),
+      password: temporaryPassword,
+    });
   } catch (err) {
     console.error("createAdmissionRecord failed:", err);
     return res
@@ -322,45 +323,33 @@ export async function loginStudent(req: Request, res: Response) {
   }
 }
 
-
-export const acceptAdmissionApplication = async (req: Request, res: Response) => {
+export const acceptAdmissionApplication = async (
+  req: Request,
+  res: Response,
+) => {
   try {
-    const { reference } = req.params;
+    const { studentDataId } = req.body;
 
-    const response = await paystack.get(`/transaction/verify/${reference}`);
-    const payment = response.data.data;
+    const payentSuccess = await Admission.update(
+      {
+        status: "accepted",
+      },
+      {
+        where: {
+          id: studentDataId,
+        },
+      },
+    );
 
-    if (payment.status !== "success") {
-      return res.status(400).json({
-        success: false,
-        message: "Payment not successful.",
+    if (payentSuccess) {
+      return res.status(200).json({
+        message: "Application accepted",
       });
     } else {
-      if (payment.amount !== parseInt(REGISTRAION_FEE)) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid payment amount.",
-        });
-      } else {
-        const payentSuccess = await RegistrationPayments.update(
-          {
-            paymentStatus: "COMPLETED",
-            paymentReference: payment.reference,
-          },
-          {
-            where: {
-              id: payment.metadata.applicationId,
-            },
-          },
-        );
-
-        if (payentSuccess) {
-          return res.status(200).json({
-            success: true,
-            payment,
-          });
-        }
-      }
+      return res.status(400).json({
+        success: false,
+        message: "Invalid application - Student is not registered.",
+      });
     }
   } catch (error: any) {
     return res.status(500).json({
