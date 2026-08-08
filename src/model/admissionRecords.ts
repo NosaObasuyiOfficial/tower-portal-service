@@ -37,7 +37,7 @@ export type ADMISSION = {
   // Program
   academicYear: string;
   admissionType: "new" | "returning";
-  track: "montessori" | "primary";
+  track: "montessori" | "upper school";
   grade: string;
 
   // Student
@@ -124,7 +124,7 @@ Admission.init(
     // Program
     academicYear: { type: DataTypes.STRING, allowNull: false },
     admissionType: { type: DataTypes.ENUM("new", "returning"), allowNull: false },
-    track: { type: DataTypes.ENUM("montessori", "primary"), allowNull: false },
+    track: { type: DataTypes.ENUM("montessori", "upper school"), allowNull: false },
     grade: {
       type: DataTypes.STRING,
       allowNull: false,
