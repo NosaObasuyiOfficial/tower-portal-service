@@ -20,7 +20,7 @@ app.use("/portal", portalKeyMiddleware, sdkRoutes);
 
 async function startTowerService() {
   try {
-    await towerDatabase.sync({alter:true});
+    await towerDatabase.sync();
     console.log("TOWER Database is ready!");
 
     app.listen(PORT, () => {

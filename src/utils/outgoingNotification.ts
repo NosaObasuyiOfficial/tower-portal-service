@@ -26,7 +26,7 @@ export function buildStudentCredentialsEmail(params: {
   const studentFullName = [data.student.firstName, data.student.middleName, data.student.lastName]
     .filter(Boolean)
     .join(" ");
-  const trackLabel = data.program.track === "montessori" ? "Montessori" : "Primary School";
+  const trackLabel = data.program.track === "montessori" ? "Montessori" : "Upper School";
   const gradeLabel = GRADE_LABELS[data.program.grade] ?? data.program.grade;
   const guardianFirstName = (data.guardian1.name || "").split(" ")[0] || "there";
 
